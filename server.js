@@ -1,66 +1,67 @@
 var express = require("express");
 var app = express();
-var port = 3000;
+const PORT = process.env.PORT || 5000 ;
 var bodyParser = require("body-parser");
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 var MongoClient = require("mongodb").MongoClient;
 
-// var url ="mongodb://admin:passme123@ec2-52-53-142-129.us-west-1.compute.amazonaws.com:27017/admin?authSource=admin";
-// var url = "mongodb+srv://batman:joker007@cluster0-0wihs.mongodb.net/test?retryWrites=true&w=majority";
-var url = "mongodb://localhost:27017/";
+var url = "mongodb+srv://batman:joker007@cluster0-0wihs.mongodb.net/test?retryWrites=true&w=majority";
 
 
-const dbName = 'demo';
-
-app.get("/load-data", function(req, res, next) {
-  console.log("I am here");
-  MongoClient.connect(url, function(err, db) {
-    if (err) throw err;
-    var dbo = db.db(dbName);
-    // var query = { address: /^S/ };
-    dbo.collection("expense").find({}, async function (err, doc) {
-			if (err) throw err;
-			let temp = await doc.toArray();
-			let temp_res = temp.reverse()
-			let prabha = [],vicky = [],time = [];
-
-      temp_res.forEach(tempobj => {
-				prabha.push(tempobj.Prabhakaran);
-				vicky.push(tempobj.vicky);
-				time.push(tempobj.curTime);
-			});
-
-      console.log("prabha =>",prabha)
-      console.log("vicky =>",vicky)
-      console.log("time =>",vicky)
-
-
-        // console.log(res);
-        res.send({prabha:prabha,vicky:vicky,time:time});
-      });
-  });
-});
-
-app.post("/insert", function(req, res, next) {
-  var item = {
-    Prabhakaran: req.body.exp1,
-    // vicky: req.body.exp2,
-    curTime: req.body.curTime,
-    };
-    console.log(item)
-  MongoClient.connect(url, function(err, db) {
-    if (err) throw err;
-    var dbo = db.db(dbName);
-    dbo.collection("expense").insertOne(item, function(err, res) {
-      if (err) throw err;
-      console.log("data inserted!!!");
-    
+var mongo_client,demo_db;
+MongoClient.connect(url,{useUnifiedTopology: true },function(err, client) {
+    mongo_client = client;
+    demo_db = client.db("demo");
+ 
+    app.listen(PORT, () => {
+      console.log(`Server running on ${PORT}`)
     });
-  });
+  }
+);
+
+
+app.post("/insert", async (req, res) => {
+  try {
+    let item = {    
+      Prabhakaran: req.body.exp1,
+      curTime: req.body.curTime,
+      };
+    if (item !== undefined) {
+      demo_db.collection("expense").insertOne(item, function(err, res) {
+        if (err) throw err;
+        console.log("data inserted!!!");
+      });
+   
+    } else {
+      res.send({ status: "ERROR" });
+    }
+  } catch (error) {
+    console.log("Error @ insert ==>>", error);
+  }
 });
 
 
-app.listen(port, () => {
-    console.log("Server listening on port " + port);
+  app.get("/summary", async (req, res) => {
+    try {
+      let sort = { _id: -1 };
+      let runDocuments = await demo_db.collection("expense").find().sort(sort).limit(30).toArray();
+      if (runDocuments !== null) {
+        let prabha = [], time=[];
+          
+        runDocuments.forEach(runDocument => {
+          prabha.push(runDocument.Prabhakaran);
+          time.push(runDocument.curTime);
+        });
+  
+        res.send({prabha:prabha,time:time});
+
+      } else {
+        res.send({
+          status: "NO_DATA"
+        });
+      }
+    } catch (error) {
+      console.log("Error @ summaryRN ==>>", error);
+    }
   });

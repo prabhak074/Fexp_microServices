@@ -236,3 +236,38 @@ app.post("/pieGraph", function (req, res, next) {
 app.listen(port, () => {
   console.log("Server listening on port " + port);
 });
+
+
+/*****************************scrap code from server****************************************** */
+
+
+app.get("/load-data", function(req, res, next) {
+  console.log("I am here");
+  MongoClient.connect(url, function(err, db) {
+    if (err) throw err;
+    var dbo = db.db(dbName);
+    // var query = { address: /^S/ };
+    dbo.collection("expense").find({}, async function (err, doc) {
+			if (err) throw err;
+			let temp = await doc.toArray();
+			let temp_res = temp.reverse()
+			let prabha = [],vicky = [],time = [];
+
+      temp_res.forEach(tempobj => {
+				prabha.push(tempobj.Prabhakaran);
+				vicky.push(tempobj.vicky);
+				time.push(tempobj.curTime);
+			});
+
+      console.log("prabha =>",prabha)
+      // console.log("vicky =>",vicky)
+      console.log("time =>",vicky)
+
+        // console.log(res);
+        res.send({prabha:prabha,vicky:vicky,time:time});
+      });
+  });
+});
+
+
+/****************************************************************************************************** */
