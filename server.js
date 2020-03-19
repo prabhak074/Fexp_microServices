@@ -8,7 +8,6 @@ var MongoClient = require("mongodb").MongoClient;
 
 var url = "mongodb+srv://batman:joker007@cluster0-0wihs.mongodb.net/test?retryWrites=true&w=majority";
 
-
 var mongo_client,demo_db;
 MongoClient.connect(url,{useUnifiedTopology: true },function(err, client) {
     mongo_client = client;
@@ -24,7 +23,10 @@ MongoClient.connect(url,{useUnifiedTopology: true },function(err, client) {
 app.post("/insert", async (req, res) => {
   try {
     let item = {    
-      Prabhakaran: req.body.exp1,
+      Expense: req.body.exp,
+      User:req.body.user,
+      Restaurants:req.body.Restaurants,
+      Description:req.body.desc,
       curTime: req.body.curTime,
       };
     if (item !== undefined) {
@@ -47,14 +49,23 @@ app.post("/insert", async (req, res) => {
       let sort = { _id: -1 };
       let runDocuments = await demo_db.collection("expense").find().sort(sort).limit(30).toArray();
       if (runDocuments !== null) {
-        let prabha = [], time=[];
+        let Expense = [], user=[],time = [],rest = [],desc = [];
           
         runDocuments.forEach(runDocument => {
-          prabha.push(runDocument.Prabhakaran);
+          Expense.push(runDocument.Expense);       
+          user.push(runDocument.User);
           time.push(runDocument.curTime);
+          rest.push(runDocument.Restaurants);
+          desc.push(runDocument.Description);
         });
-  
-        res.send({prabha:prabha,time:time});
+ 
+        res.send({
+          expense:Expense,
+          user:user,
+          time:time,
+          rest:rest,
+          desc:desc,
+        });
 
       } else {
         res.send({
@@ -63,5 +74,38 @@ app.post("/insert", async (req, res) => {
       }
     } catch (error) {
       console.log("Error @ summaryRN ==>>", error);
+    }
+  });
+
+
+  app.get("/search", async (req, res) => {
+    try {
+      // let user = req.body.User;         
+      let runDocument = await demo_db.collection("expense").find({ User: "Prabhakaran" }).toArray();
+      let runDocument1 = await demo_db.collection("expense").find({ User: "Vignesh" }).toArray();
+
+      let prabha = [], vicky=[];
+          
+        runDocument.forEach(runDocument => {
+          prabha.push(runDocument.Expense);       
+        });
+
+        runDocument1.forEach(runDocument => {
+          vicky.push(runDocument.Expense);       
+        });
+
+        const reducer = (accumulator, currentValue) => accumulator + currentValue;
+        // console.log(Expense.reduce(reducer));
+        let prabexp= (prabha.reduce(reducer));
+        let vickyexp= (vicky.reduce(reducer));
+
+        console.log(prabexp,vickyexp)
+
+        res.send({
+          prabha:prabexp,vicky:vickyexp
+        });
+
+    } catch (error) {
+      console.log("Error @ search ==>>", error);
     }
   });
